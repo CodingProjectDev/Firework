@@ -72,18 +72,6 @@
           <canvas id="trails-canvas"></canvas>
           <canvas id="main-canvas"></canvas>
         </div>
-        <!-- Live countdown overlay -->
-        <div class="countdown-overlay hide">
-          <div class="countdown-overlay__label">Launching in</div>
-          <div class="countdown-overlay__time" id="countdown-display">0:00</div>
-        </div>
-
-        <!-- Zero / celebration message -->
-        <div class="countdown-zero-msg" id="countdown-zero-msg">
-          <div class="countdown-zero-msg__text" id="countdown-zero-text">🎆 Happy New Year! 🎆</div>
-          <div class="countdown-zero-msg__sub">fireworks launched</div>
-        </div>
-
         <div class="controls">
           <div class="btn pause-btn">
             <svg fill="white" width="24" height="24">
@@ -201,6 +189,18 @@
           </div>
         </div>
       </div>
+      <!-- Live countdown overlay — outside stage-container so it's never display:none -->
+      <div class="countdown-overlay hide" id="countdown-overlay">
+        <div class="countdown-overlay__label">Launching in</div>
+        <div class="countdown-overlay__time" id="countdown-display">0:00</div>
+      </div>
+
+      <!-- Zero / celebration message -->
+      <div class="countdown-zero-msg" id="countdown-zero-msg">
+        <div class="countdown-zero-msg__text" id="countdown-zero-text">🎆 Happy New Year! 🎆</div>
+        <div class="countdown-zero-msg__sub">Fireworks launched</div>
+      </div>
+
       <div class="help-modal">
         <div class="help-modal__overlay"></div>
         <div class="help-modal__dialog">
@@ -225,6 +225,6 @@
     <script src="https://codingprojectdev.github.io/codingProjectdev/render.js"></script>
     <script src="https://codingprojectdev.github.io/codingProjectdev/main.js"></script>
     <!-- ── Countdown Feature ── -->
-    <script src="./countdown.js" defer></script>
+    <script src="./countdown.js"></script>
   </body>
 </html>
