@@ -1,0 +1,455 @@
+.menu .form-option {
+  display: flex;
+  align-items: center;
+  margin: 14px 0;
+  transition: opacity 0.3s;
+  gap: 10px;
+}
+.menu .form-option label {
+  display: block;
+  width: 50%;
+  padding-right: 12px;
+  text-align: right;
+  text-transform: uppercase;
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.08em;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.menu .form-option--select select {
+  display: block;
+  width: 50%;
+  height: 34px;
+  font-size: 1rem;
+  font-family: "Russo One", arial, sans-serif;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.06em;
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  padding: 0 10px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: border-color 0.25s, box-shadow 0.25s, background-color 0.25s,
+    transform 0.2s;
+}
+.menu .form-option--select select option {
+  background-color: #0c0c0c;
+}
+.menu .form-option--select select:focus {
+  outline: none;
+  border-color: rgba(0, 153, 255, 0.8);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.45),
+    0 0 0 2px rgba(0, 153, 255, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+.menu .form-option--text input {
+  display: block;
+  width: 50%;
+  height: 34px;
+  font-size: 1rem;
+  font-family: "Russo One", arial, sans-serif;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.06em;
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  padding: 0 10px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: border-color 0.25s, box-shadow 0.25s, background-color 0.25s,
+    transform 0.2s;
+}
+.menu .form-option--text input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+.menu .form-option--text input:focus {
+  outline: none;
+  border-color: rgba(0, 153, 255, 0.8);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.45),
+    0 0 0 2px rgba(0, 153, 255, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+.menu .form-option--checkbox input {
+  display: block;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  opacity: 0.9;
+  accent-color: #09f;
+  border-radius: 4px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+@media (max-width: 840px) {
+  .menu .form-option select,
+  .menu .form-option input {
+    outline: none;
+  }
+}
+
+.close-menu-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.btn {
+  opacity: 0.5;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  cursor: pointer;
+  transition: opacity 0.3s, transform 0.2s, box-shadow 0.2s;
+  pointer-events: auto;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.btn--bright {
+  opacity: 0.85;
+}
+@media (min-width: 840px) {
+  .btn:hover {
+    opacity: 0.8;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  .btn--bright:hover {
+    opacity: 1;
+  }
+}
+.btn svg {
+  display: block;
+  margin: auto;
+  pointer-events: none;
+  fill: #fff;
+  opacity: 1;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.45));
+}
+
+.credits {
+  margin-top: auto;
+  margin-bottom: 10px;
+  padding-top: 6px;
+  font-size:1em;
+  opacity: 9.95;
+}
+.credits a {
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+}
+.credits a:hover,
+.credits a:active {
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: underline;
+}
+
+.help-modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  visibility: hidden;
+  transition-property: visibility;
+  transition-duration: 0.25s;
+}
+.help-modal__overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  opacity: 0;
+  transition-property: opacity;
+  transition-timing-function: ease-in;
+  transition-duration: 0.25s;
+}
+.help-modal__dialog {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 400px;
+  max-height: calc(100vh - 100px);
+  margin: 10px;
+  padding: 20px;
+  border-radius: 0.3em;
+  background-color: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transform: scale(0.9, 0.9);
+  transition-property: opacity, transform;
+  transition-timing-function: ease-in;
+  transition-duration: 0.25s;
+}
+@media (min-width: 840px) {
+  .help-modal__dialog {
+    font-size: 1.25rem;
+    max-width: 500px;
+  }
+}
+.help-modal__header {
+  font-size: 1.75em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.help-modal__body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1em 0;
+  padding: 1em 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.75);
+}
+.help-modal__close-btn {
+  flex-shrink: 0;
+  outline: none;
+  border: none;
+  border-radius: 2px;
+  padding: 0.25em 0.75em;
+  margin-top: 0.36em;
+  font-family: "Russo One", arial, sans-serif;
+  font-size: 1em;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background-color: rgba(255, 255, 255, 0.25);
+  transition: color 0.3s, background-color 0.3s;
+}
+.help-modal__close-btn:hover,
+.help-modal__close-btn:active,
+.help-modal__close-btn:focus {
+  color: #fff;
+  background-color: #09f;
+}
+.help-modal.active {
+  visibility: visible;
+  transition-duration: 0.4s;
+}
+.help-modal.active .help-modal__overlay {
+  opacity: 1;
+  transition-timing-function: ease-out;
+  transition-duration: 0.4s;
+}
+.help-modal.active .help-modal__dialog {
+  opacity: 1;
+  transform: scale(1, 1);
+  transition-timing-function: ease-out;
+  transition-duration: 0.4s;
+}
+
+/* ── Countdown number-input ── */
+.menu .form-option--number input[type="number"] {
+  display: block;
+  width: 50%;
+  height: 34px;
+  font-size: 1rem;
+  font-family: "Russo One", arial, sans-serif;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.06em;
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  padding: 0 10px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: border-color 0.25s, box-shadow 0.25s, background-color 0.25s,
+    transform 0.2s;
+  -moz-appearance: textfield;
+}
+.menu .form-option--number input[type="number"]::-webkit-outer-spin-button,
+.menu .form-option--number input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.menu .form-option--number input[type="number"]:focus {
+  outline: none;
+  border-color: rgba(0, 153, 255, 0.8);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.45),
+    0 0 0 2px rgba(0, 153, 255, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+/* ── Countdown start button ── */
+.countdown-start-btn {
+  display: block;
+  width: calc(50% + 10px);
+  margin-left: auto;
+  margin-top: 4px;
+  height: 34px;
+  font-size: 0.85rem;
+  font-family: "Russo One", arial, sans-serif;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, rgba(0,153,255,0.25), rgba(0,80,180,0.2));
+  border: 1px solid rgba(0, 153, 255, 0.45);
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35), 0 0 10px rgba(0,153,255,0.1);
+  transition: background 0.25s, border-color 0.25s, box-shadow 0.25s, transform 0.2s, opacity 0.2s;
+}
+.countdown-start-btn:hover {
+  background: linear-gradient(135deg, rgba(0,153,255,0.4), rgba(0,80,180,0.35));
+  border-color: rgba(0, 153, 255, 0.8);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.45), 0 0 18px rgba(0,153,255,0.3);
+  transform: translateY(-2px);
+}
+.countdown-start-btn:active {
+  transform: translateY(0);
+}
+.countdown-start-btn.active {
+  background: linear-gradient(135deg, rgba(255,60,60,0.25), rgba(180,20,20,0.2));
+  border-color: rgba(255, 80, 80, 0.55);
+  color: rgba(255,160,160,0.95);
+}
+.countdown-start-btn.active:hover {
+  background: linear-gradient(135deg, rgba(255,60,60,0.4), rgba(180,20,20,0.35));
+  border-color: rgba(255, 80, 80, 0.85);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.45), 0 0 18px rgba(255,60,60,0.3);
+}
+
+/* ── Countdown message field (disabled when countdown is off) ── */
+.form-option--countdown-message input:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Live countdown overlay widget ── */
+.countdown-overlay {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 7;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: opacity 0.4s, visibility 0.4s;
+}
+.countdown-overlay.hide {
+  opacity: 0;
+  visibility: hidden;
+}
+.countdown-overlay__label {
+  font-size: 0.62em;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+.countdown-overlay__time {
+  font-size: 2.8em;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow:
+    0 0 18px rgba(0, 153, 255, 0.7),
+    0 0 40px rgba(0, 153, 255, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.8);
+  line-height: 1;
+  transition: color 0.3s, text-shadow 0.3s;
+}
+.countdown-overlay__time.urgent {
+  color: rgba(255, 110, 110, 0.95);
+  text-shadow:
+    0 0 18px rgba(255, 60, 60, 0.8),
+    0 0 40px rgba(255, 60, 60, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.8);
+  animation: countdown-pulse 0.9s ease-in-out infinite;
+}
+@keyframes countdown-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.07); }
+}
+
+/* ── Zero / celebration message ── */
+.countdown-zero-msg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  z-index: 10;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out, visibility 0.5s;
+}
+.countdown-zero-msg.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+.countdown-zero-msg__text {
+  font-size: clamp(1.8em, 6vw, 3.6em);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-shadow:
+    0 0 30px rgba(255, 220, 60, 0.9),
+    0 0 60px rgba(255, 160, 0, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.9);
+  background: linear-gradient(90deg, #ffe066, #ffaa00, #ff6600, #ffaa00, #ffe066);
+  background-size: 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gold-shimmer 2.5s linear infinite;
+}
+@keyframes gold-shimmer {
+  0%   { background-position: 0%; }
+  100% { background-position: 300%; }
+}
+.countdown-zero-msg__sub {
+  margin-top: 0.4em;
+  font-size: clamp(0.7em, 2vw, 1em);
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+}
+
+.rainbow-text {
+  background: linear-gradient(
+    90deg,
+    red,
+    orange,
+    yellow,
+    green,
+    cyan,
+    blue,
+    violet
+  );
+  background-size: 400%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbow 4s linear infinite;
+}
+
+@keyframes rainbow {
+  0% {
+    background-position: 0%;
+  }
+  100% {
+    background-position: 400%;
+  }
+}
