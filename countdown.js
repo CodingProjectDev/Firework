@@ -1,118 +1,179 @@
-(function () {
+/* countdown.js — cross-browser / mobile-safe
+ * Fixes: DOMContentLoaded guard, iOS AudioContext unlock, drift-corrected
+ * timer, padStart polyfill, touch-action, old-Android compat.
+ */
+
+/* ── String.prototype.padStart polyfill (old Android WebView) ── */
+if (!String.prototype.padStart) {
+  String.prototype.padStart = function (len, fill) {
+    var s = String(this);
+    var f = fill === undefined ? ' ' : String(fill);
+    while (s.length < len) { s = f + s; }
+    return s;
+  };
+}
+
+/* ── Wait for DOM before touching any elements ── */
+function cdInit() {
+
   /* ── DOM refs ── */
-  const startBtn       = document.getElementById('countdown-start-btn');
-  const durationInput  = document.getElementById('countdown-duration');
-  const messageInput   = document.getElementById('countdown-message');
-  const overlay        = document.querySelector('.countdown-overlay');
-  const display        = document.getElementById('countdown-display');
-  const zeroMsg        = document.getElementById('countdown-zero-msg');
-  const zeroText       = document.getElementById('countdown-zero-text');
+  var startBtn      = document.getElementById('countdown-start-btn');
+  var durationInput = document.getElementById('countdown-duration');
+  var messageInput  = document.getElementById('countdown-message');
+  var overlay       = document.querySelector('.countdown-overlay');
+  var display       = document.getElementById('countdown-display');
+  var zeroMsg       = document.getElementById('countdown-zero-msg');
+  var zeroText      = document.getElementById('countdown-zero-text');
+
+  /* Guard: if any required element is missing, bail silently */
+  if (!startBtn || !durationInput || !messageInput ||
+      !overlay  || !display       || !zeroMsg || !zeroText) {
+    return;
+  }
 
   /* ── State ── */
-  let timer      = null;
-  let remaining  = 0;
-  let isRunning  = false;
+  var timer        = null;   /* interval handle             */
+  var endTime      = 0;      /* absolute end timestamp (ms) */
+  var isRunning    = false;
 
-  /* ── Audio: simple beep via Web Audio API ── */
-  let audioCtx = null;
+  /* ── Audio ── */
+  var audioCtx      = null;
+  var audioUnlocked = false;
+
   function getAudioCtx() {
     if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) { audioCtx = null; }
+    }
+    /* Resume suspended context (iOS requires this after unlock) */
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
     }
     return audioCtx;
   }
 
+  /* iOS Safari requires AudioContext to be created/resumed inside a
+     direct user-gesture. We unlock it on the very first button tap. */
+  function unlockAudio() {
+    if (audioUnlocked) { return; }
+    var ctx = getAudioCtx();
+    if (!ctx) { return; }
+    try {
+      var buf = ctx.createBuffer(1, 1, 22050);
+      var src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      if (src.start) { src.start(0); } else { src.noteOn(0); }
+    } catch (e) { /* ignore */ }
+    audioUnlocked = true;
+  }
+
   function playBeep(freq, dur, vol) {
     try {
-      const ctx  = getAudioCtx();
-      const osc  = ctx.createOscillator();
-      const gain = ctx.createGain();
+      var ctx = getAudioCtx();
+      if (!ctx) { return; }
+      var osc  = ctx.createOscillator();
+      var gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.type      = 'sine';
+      osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, ctx.currentTime);
       gain.gain.setValueAtTime(vol, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + dur);
+      if (osc.start) { osc.start(ctx.currentTime); } else { osc.noteOn(ctx.currentTime); }
+      if (osc.stop)  { osc.stop(ctx.currentTime + dur); }  else { osc.noteOff(ctx.currentTime + dur); }
     } catch (e) { /* audio not available */ }
   }
 
-  function playTickBeep()   { playBeep(880, 0.07, 0.18); }
+  function playTickBeep()   { playBeep(880,  0.07, 0.18); }
   function playUrgentBeep() { playBeep(1320, 0.12, 0.28); }
   function playLaunchFanfare() {
-    const notes = [523, 659, 784, 1047];
-    notes.forEach((f, i) => {
-      setTimeout(() => playBeep(f, 0.22, 0.35), i * 100);
-    });
+    var notes = [523, 659, 784, 1047];
+    for (var i = 0; i < notes.length; i++) {
+      (function (f, delay) {
+        setTimeout(function () { playBeep(f, 0.22, 0.35); }, delay);
+      }(notes[i], i * 100));
+    }
   }
 
   /* ── Helpers ── */
   function formatTime(secs) {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return m + ':' + String(s).padStart(2, '0');
+    var s   = Math.max(0, Math.floor(secs));
+    var m   = Math.floor(s / 60);
+    var sec = s % 60;
+    return m + ':' + String(sec).padStart(2, '0');
   }
 
-  function showOverlay() { overlay.classList.remove('hide'); }
-  function hideOverlay() { overlay.classList.add('hide'); }
+  function showOverlay() {
+    overlay.className = overlay.className.replace(/\bhide\b/g, '').trim();
+  }
+  function hideOverlay() {
+    if (overlay.className.indexOf('hide') === -1) {
+      overlay.className += ' hide';
+    }
+  }
 
   function setUrgent(on) {
-    display.classList.toggle('urgent', on);
+    if (on) {
+      if (display.className.indexOf('urgent') === -1) {
+        display.className += ' urgent';
+      }
+    } else {
+      display.className = display.className.replace(/\burgent\b/g, '').trim();
+    }
   }
 
   function showZeroMessage(msg) {
-    zeroText.textContent = msg || '🎆 Happy New Year! 🎆';
-    zeroMsg.classList.add('visible');
-    /* auto-dismiss after 5 s */
-    setTimeout(() => zeroMsg.classList.remove('visible'), 5000);
+    zeroText.textContent = msg || '\uD83C\uDF86 Happy New Year! \uD83C\uDF86';
+    if (zeroMsg.className.indexOf('visible') === -1) {
+      zeroMsg.className += ' visible';
+    }
+    setTimeout(function () {
+      zeroMsg.className = zeroMsg.className.replace(/\bvisible\b/g, '').trim();
+    }, 5000);
   }
 
   function triggerAutoLaunch() {
-    /* Interact with the existing fireworks UI toggles if available */
     try {
-      const autoLaunchCheck = document.querySelector('.auto-launch');
-      if (autoLaunchCheck && !autoLaunchCheck.checked) {
-        autoLaunchCheck.click();
-      }
-      const finaleCheck = document.querySelector('.finale-mode');
-      if (finaleCheck && !finaleCheck.checked) {
-        finaleCheck.click();
-      }
-      /* Resume simulation if currently paused */
-      const pauseBtn = document.querySelector('.pause-btn');
+      var autoLaunchCheck = document.querySelector('.auto-launch');
+      if (autoLaunchCheck && !autoLaunchCheck.checked) { autoLaunchCheck.click(); }
+      var finaleCheck = document.querySelector('.finale-mode');
+      if (finaleCheck && !finaleCheck.checked) { finaleCheck.click(); }
+      var pauseBtn = document.querySelector('.pause-btn');
       if (pauseBtn) {
-        const pauseIcon = pauseBtn.querySelector('use');
-        const href = pauseIcon
-          ? (pauseIcon.getAttribute('href') || pauseIcon.getAttribute('xlink:href'))
+        var pauseIcon = pauseBtn.querySelector('use');
+        var href = pauseIcon
+          ? (pauseIcon.getAttribute('href') || pauseIcon.getAttribute('xlink:href') || '')
           : '';
-        if (href && href.includes('play')) {
-          pauseBtn.click();
-        }
+        if (href.indexOf('play') !== -1) { pauseBtn.click(); }
       }
-    } catch (e) { /* no-op if API unavailable */ }
+    } catch (e) { /* no-op */ }
   }
 
-  /* ── Core countdown logic ── */
+  /* ── Drift-corrected tick ──────────────────────────────────────────
+   * setInterval is throttled / frozen on mobile (background tabs,
+   * screen lock, CPU throttling). We store the absolute endTime and
+   * compute remaining from Date.now() on every tick instead of
+   * decrementing a counter, so the display is always accurate when
+   * the phone wakes up.
+   * ────────────────────────────────────────────────────────────────── */
   function tick() {
+    var remaining = Math.round((endTime - Date.now()) / 1000);
+
     if (remaining <= 0) {
+      display.textContent = '0:00';
       finish();
       return;
     }
 
-    remaining--;
     display.textContent = formatTime(remaining);
 
-    /* Urgency threshold: last 10 seconds */
     if (remaining <= 10) {
       setUrgent(true);
       playUrgentBeep();
     } else {
       playTickBeep();
-    }
-
-    if (remaining <= 0) {
-      finish();
     }
   }
 
@@ -124,39 +185,34 @@
     hideOverlay();
     setUrgent(false);
 
-    /* 1. Show launch message */
-    const msg = (messageInput.value.trim()) || '🎆 Happy New Year! 🎆';
+    var raw = messageInput.value || '';
+    var msg = raw.replace(/^\s+|\s+$/g, '') || '\uD83C\uDF86 Happy New Year! \uD83C\uDF86';
     showZeroMessage(msg);
-
-    /* 2. Play fanfare */
     playLaunchFanfare();
-
-    /* 3. Auto-launch fireworks */
     triggerAutoLaunch();
 
-    /* Reset button */
     startBtn.textContent = 'Start Countdown';
-    startBtn.classList.remove('active');
+    startBtn.className   = startBtn.className.replace(/\bactive\b/g, '').trim();
   }
 
   function startCountdown() {
-    const secs = parseInt(durationInput.value, 10);
+    var secs = parseInt(durationInput.value, 10);
     if (!secs || secs < 1) {
       durationInput.focus();
       return;
     }
 
-    remaining = secs;
-    display.textContent = formatTime(remaining);
+    endTime   = Date.now() + secs * 1000;
+    isRunning = true;
+
+    display.textContent = formatTime(secs);
     showOverlay();
     setUrgent(false);
 
     startBtn.textContent = 'Cancel';
-    startBtn.classList.add('active');
-    isRunning = true;
-
-    /* Unlock AudioContext on first user gesture */
-    getAudioCtx();
+    if (startBtn.className.indexOf('active') === -1) {
+      startBtn.className += ' active';
+    }
 
     timer = setInterval(tick, 1000);
   }
@@ -165,31 +221,79 @@
     clearInterval(timer);
     timer     = null;
     isRunning = false;
-    remaining = 0;
+    endTime   = 0;
 
     hideOverlay();
     setUrgent(false);
-    zeroMsg.classList.remove('visible');
+    zeroMsg.className = zeroMsg.className.replace(/\bvisible\b/g, '').trim();
 
     startBtn.textContent = 'Start Countdown';
-    startBtn.classList.remove('active');
+    startBtn.className   = startBtn.className.replace(/\bactive\b/g, '').trim();
+
+    var v = parseInt(durationInput.value, 10);
+    display.textContent = formatTime(isNaN(v) ? 0 : v);
   }
 
-  /* ── Button handler ── */
-  startBtn.addEventListener('click', function () {
-    if (isRunning) {
-      cancelCountdown();
-    } else {
-      startCountdown();
-    }
+  /* ── Button: touchend + click for max compatibility ────────────────
+   * touchend fires before click and skips the 300 ms delay on old iOS.
+   * We flag it so the fallback click handler doesn't double-fire.
+   * ────────────────────────────────────────────────────────────────── */
+  var touchFired = false;
+
+  function handleActivation(e) {
+    if (e && e.preventDefault) { e.preventDefault(); }
+    unlockAudio();
+    if (isRunning) { cancelCountdown(); } else { startCountdown(); }
+  }
+
+  startBtn.addEventListener('touchend', function (e) {
+    touchFired = true;
+    handleActivation(e);
+    setTimeout(function () { touchFired = false; }, 600);
+  }, { passive: false });
+
+  startBtn.addEventListener('click', function (e) {
+    if (touchFired) { return; }
+    handleActivation(e);
   });
 
-  /* Live-preview the time display while user edits the duration field */
+  /* Live-preview while editing duration (idle only) */
   durationInput.addEventListener('input', function () {
     if (!isRunning) {
-      const v = parseInt(this.value, 10);
+      var v = parseInt(this.value, 10);
       display.textContent = formatTime(isNaN(v) ? 0 : v);
     }
   });
 
-}());
+  /* ── Page Visibility API: re-sync on return from background ────────
+   * The browser may freeze JS while the app is backgrounded on mobile.
+   * When the user returns, immediately recalculate from the wall clock.
+   * ────────────────────────────────────────────────────────────────── */
+  var visibilityChange =
+    (typeof document.hidden !== 'undefined')           ? 'visibilitychange'
+    : (typeof document.msHidden !== 'undefined')       ? 'msvisibilitychange'
+    : (typeof document.webkitHidden !== 'undefined')   ? 'webkitvisibilitychange'
+    : null;
+
+  if (visibilityChange) {
+    document.addEventListener(visibilityChange, function () {
+      if (!isRunning) { return; }
+      var isHidden = document.hidden || document.msHidden || document.webkitHidden;
+      if (!isHidden) {
+        tick(); /* immediate re-sync */
+        if (Date.now() >= endTime) {
+          clearInterval(timer);
+          finish();
+        }
+      }
+    });
+  }
+
+} /* end cdInit */
+
+/* ── Boot after DOM is ready ── */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', cdInit);
+} else {
+  cdInit();
+}
