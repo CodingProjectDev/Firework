@@ -297,15 +297,26 @@
   margin-left: auto;
   margin-top: 4px;
   height: 34px;
-  font-size: 0.85rem;
+  /* clamp() fallback for old Android (< Chrome 79) */
+  font-size: 0.8rem;
+  font-size: clamp(0.72rem, 2.2vw, 0.85rem);
   font-family: "Russo One", arial, sans-serif;
   color: rgba(255, 255, 255, 0.9);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  background: linear-gradient(135deg, rgba(0,153,255,0.25), rgba(0,80,180,0.2));
+  /* Prefixed gradient for very old WebKit */
+  background: -webkit-linear-gradient(315deg, rgba(0,153,255,0.25), rgba(0,80,180,0.2));
+  background:         linear-gradient(135deg, rgba(0,153,255,0.25), rgba(0,80,180,0.2));
   border: 1px solid rgba(0, 153, 255, 0.45);
   border-radius: 6px;
   cursor: pointer;
+  /* Kill 300 ms tap delay + ghost highlight on iOS/Android */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  /* GPU hint */
+  will-change: transform, opacity;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35), 0 0 10px rgba(0,153,255,0.1);
   transition: background 0.25s, border-color 0.25s, box-shadow 0.25s, transform 0.2s, opacity 0.2s;
 }
@@ -319,7 +330,8 @@
   transform: translateY(0);
 }
 .countdown-start-btn.active {
-  background: linear-gradient(135deg, rgba(255,60,60,0.25), rgba(180,20,20,0.2));
+  background: -webkit-linear-gradient(315deg, rgba(255,60,60,0.25), rgba(180,20,20,0.2));
+  background:         linear-gradient(135deg, rgba(255,60,60,0.25), rgba(180,20,20,0.2));
   border-color: rgba(255, 80, 80, 0.55);
   color: rgba(255,160,160,0.95);
 }
@@ -340,14 +352,20 @@
   position: absolute;
   top: 16px;
   left: 50%;
-  transform: translateX(-50%);
+  -webkit-transform: translateX(-50%);
+          transform: translateX(-50%);
   z-index: 7;
   pointer-events: none;
+  display: -webkit-flex;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  -webkit-flex-direction: column;
+          flex-direction: column;
+  -webkit-align-items: center;
+          align-items: center;
   gap: 2px;
-  transition: opacity 0.4s, visibility 0.4s;
+  will-change: opacity;
+  -webkit-transition: opacity 0.4s, visibility 0.4s;
+          transition: opacity 0.4s, visibility 0.4s;
 }
 .countdown-overlay.hide {
   opacity: 0;
@@ -360,14 +378,18 @@
   color: rgba(255, 255, 255, 0.4);
 }
 .countdown-overlay__time {
+  /* clamp fallback for old Android */
   font-size: 2.8em;
+  font-size: clamp(1.8em, 7vw, 2.8em);
   color: rgba(255, 255, 255, 0.92);
   text-shadow:
     0 0 18px rgba(0, 153, 255, 0.7),
     0 0 40px rgba(0, 153, 255, 0.35),
     0 2px 8px rgba(0, 0, 0, 0.8);
   line-height: 1;
-  transition: color 0.3s, text-shadow 0.3s;
+  will-change: transform;
+  -webkit-transition: color 0.3s, text-shadow 0.3s;
+          transition: color 0.3s, text-shadow 0.3s;
 }
 .countdown-overlay__time.urgent {
   color: rgba(255, 110, 110, 0.95);
@@ -375,11 +397,16 @@
     0 0 18px rgba(255, 60, 60, 0.8),
     0 0 40px rgba(255, 60, 60, 0.4),
     0 2px 8px rgba(0, 0, 0, 0.8);
-  animation: countdown-pulse 0.9s ease-in-out infinite;
+  -webkit-animation: countdown-pulse 0.9s ease-in-out infinite;
+          animation: countdown-pulse 0.9s ease-in-out infinite;
+}
+@-webkit-keyframes countdown-pulse {
+  0%, 100% { -webkit-transform: scale(1); transform: scale(1); }
+  50%       { -webkit-transform: scale(1.07); transform: scale(1.07); }
 }
 @keyframes countdown-pulse {
-  0%, 100% { transform: scale(1); }
-  50%       { transform: scale(1.07); }
+  0%, 100% { -webkit-transform: scale(1); transform: scale(1); }
+  50%       { -webkit-transform: scale(1.07); transform: scale(1.07); }
 }
 
 /* ── Zero / celebration message ── */
@@ -387,20 +414,29 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) scale(0.8);
+  /* Prefixed transform for old WebKit */
+  -webkit-transform: translate(-50%, -50%) scale(0.8);
+          transform: translate(-50%, -50%) scale(0.8);
   z-index: 10;
   text-align: center;
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.5s ease-out, transform 0.5s ease-out, visibility 0.5s;
+  will-change: opacity, transform;
+  -webkit-transition: opacity 0.5s ease-out, -webkit-transform 0.5s ease-out, visibility 0.5s;
+          transition: opacity 0.5s ease-out,         transform 0.5s ease-out, visibility 0.5s;
 }
 .countdown-zero-msg.visible {
   opacity: 1;
   visibility: visible;
-  transform: translate(-50%, -50%) scale(1);
+  -webkit-transform: translate(-50%, -50%) scale(1);
+          transform: translate(-50%, -50%) scale(1);
 }
 .countdown-zero-msg__text {
+  /* Solid fallback for browsers that don't support background-clip: text */
+  color: #ffaa00;
+  /* clamp fallback for old Android */
+  font-size: 1.8em;
   font-size: clamp(1.8em, 6vw, 3.6em);
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -408,12 +444,18 @@
     0 0 30px rgba(255, 220, 60, 0.9),
     0 0 60px rgba(255, 160, 0, 0.5),
     0 4px 12px rgba(0, 0, 0, 0.9);
-  background: linear-gradient(90deg, #ffe066, #ffaa00, #ff6600, #ffaa00, #ffe066);
+  background: -webkit-linear-gradient(left, #ffe066, #ffaa00, #ff6600, #ffaa00, #ffe066);
+  background:         linear-gradient(90deg, #ffe066, #ffaa00, #ff6600, #ffaa00, #ffe066);
   background-size: 300%;
   -webkit-background-clip: text;
-  background-clip: text;
+          background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: gold-shimmer 2.5s linear infinite;
+  -webkit-animation: gold-shimmer 2.5s linear infinite;
+          animation: gold-shimmer 2.5s linear infinite;
+}
+@-webkit-keyframes gold-shimmer {
+  0%   { background-position: 0%; }
+  100% { background-position: 300%; }
 }
 @keyframes gold-shimmer {
   0%   { background-position: 0%; }
@@ -421,6 +463,8 @@
 }
 .countdown-zero-msg__sub {
   margin-top: 0.4em;
+  /* clamp fallback */
+  font-size: 0.7em;
   font-size: clamp(0.7em, 2vw, 1em);
   letter-spacing: 0.2em;
   color: rgba(255, 255, 255, 0.5);
