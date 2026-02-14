@@ -1,9 +1,6 @@
-/* countdown.js — cross-browser / mobile-safe
- * Fixes: DOMContentLoaded guard, iOS AudioContext unlock, drift-corrected
- * timer, padStart polyfill, touch-action, old-Android compat.
- */
 
-/* ── String.prototype.padStart polyfill (old Android WebView) ── */
+
+/* ── padStart polyfill (Android < 6) ── */
 if (!String.prototype.padStart) {
   String.prototype.padStart = function (len, fill) {
     var s = String(this);
@@ -13,27 +10,26 @@ if (!String.prototype.padStart) {
   };
 }
 
-/* ── Wait for DOM before touching any elements ── */
 function cdInit() {
-
   /* ── DOM refs ── */
   var startBtn      = document.getElementById('countdown-start-btn');
   var durationInput = document.getElementById('countdown-duration');
   var messageInput  = document.getElementById('countdown-message');
-  var overlay       = document.querySelector('.countdown-overlay');
+  var overlay       = document.getElementById('countdown-overlay');
   var display       = document.getElementById('countdown-display');
   var zeroMsg       = document.getElementById('countdown-zero-msg');
   var zeroText      = document.getElementById('countdown-zero-text');
 
-  /* Guard: if any required element is missing, bail silently */
   if (!startBtn || !durationInput || !messageInput ||
       !overlay  || !display       || !zeroMsg || !zeroText) {
+    /* Elements not in DOM yet — retry once after a short delay */
+    setTimeout(cdInit, 500);
     return;
   }
 
   /* ── State ── */
-  var timer        = null;   /* interval handle             */
-  var endTime      = 0;      /* absolute end timestamp (ms) */
+  var timer        = null;
+  var endTime      = 0;
   var isRunning    = false;
 
   /* ── Audio ── */
@@ -46,15 +42,12 @@ function cdInit() {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       } catch (e) { audioCtx = null; }
     }
-    /* Resume suspended context (iOS requires this after unlock) */
     if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume();
+      try { audioCtx.resume(); } catch(e){}
     }
     return audioCtx;
   }
 
-  /* iOS Safari requires AudioContext to be created/resumed inside a
-     direct user-gesture. We unlock it on the very first button tap. */
   function unlockAudio() {
     if (audioUnlocked) { return; }
     var ctx = getAudioCtx();
@@ -65,7 +58,7 @@ function cdInit() {
       src.buffer = buf;
       src.connect(ctx.destination);
       if (src.start) { src.start(0); } else { src.noteOn(0); }
-    } catch (e) { /* ignore */ }
+    } catch (e) {}
     audioUnlocked = true;
   }
 
@@ -81,9 +74,9 @@ function cdInit() {
       osc.frequency.setValueAtTime(freq, ctx.currentTime);
       gain.gain.setValueAtTime(vol, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
-      if (osc.start) { osc.start(ctx.currentTime); } else { osc.noteOn(ctx.currentTime); }
-      if (osc.stop)  { osc.stop(ctx.currentTime + dur); }  else { osc.noteOff(ctx.currentTime + dur); }
-    } catch (e) { /* audio not available */ }
+      if (osc.start)  { osc.start(ctx.currentTime); }  else { osc.noteOn(ctx.currentTime); }
+      if (osc.stop)   { osc.stop(ctx.currentTime + dur);} else { osc.noteOff(ctx.currentTime + dur); }
+    } catch (e) {}
   }
 
   function playTickBeep()   { playBeep(880,  0.07, 0.18); }
@@ -91,9 +84,7 @@ function cdInit() {
   function playLaunchFanfare() {
     var notes = [523, 659, 784, 1047];
     for (var i = 0; i < notes.length; i++) {
-      (function (f, delay) {
-        setTimeout(function () { playBeep(f, 0.22, 0.35); }, delay);
-      }(notes[i], i * 100));
+      (function(f, d) { setTimeout(function() { playBeep(f, 0.22, 0.35); }, d); }(notes[i], i * 100));
     }
   }
 
@@ -105,59 +96,73 @@ function cdInit() {
     return m + ':' + String(sec).padStart(2, '0');
   }
 
-  function showOverlay() {
-    overlay.className = overlay.className.replace(/\bhide\b/g, '').trim();
+  function addClass(el, cls) {
+    if (el.className.indexOf(cls) === -1) { el.className += ' ' + cls; }
   }
-  function hideOverlay() {
-    if (overlay.className.indexOf('hide') === -1) {
-      overlay.className += ' hide';
-    }
+  function removeClass(el, cls) {
+    el.className = el.className.replace(new RegExp('\\b' + cls + '\\b', 'g'), '').replace(/\s+/g, ' ').trim();
   }
 
-  function setUrgent(on) {
-    if (on) {
-      if (display.className.indexOf('urgent') === -1) {
-        display.className += ' urgent';
-      }
-    } else {
-      display.className = display.className.replace(/\burgent\b/g, '').trim();
-    }
-  }
+  function showOverlay() { removeClass(overlay, 'hide'); }
+  function hideOverlay() { addClass(overlay, 'hide'); }
+  function setUrgent(on) { if (on) { addClass(display, 'urgent'); } else { removeClass(display, 'urgent'); } }
 
   function showZeroMessage(msg) {
     zeroText.textContent = msg || '\uD83C\uDF86 Happy New Year! \uD83C\uDF86';
-    if (zeroMsg.className.indexOf('visible') === -1) {
-      zeroMsg.className += ' visible';
-    }
-    setTimeout(function () {
-      zeroMsg.className = zeroMsg.className.replace(/\bvisible\b/g, '').trim();
-    }, 5000);
+    addClass(zeroMsg, 'visible');
+    setTimeout(function() { removeClass(zeroMsg, 'visible'); }, 5000);
   }
 
+  /* ── Launch fireworks via the app's own API ──────────────────────────
+   * The app stores all state in `store`. Clicking DOM checkboxes does
+   * nothing because the app reads from store.state, not from the DOM.
+   * We must call store.setState() + togglePause() directly.
+   * All three functions are defined in globals.js / actions.js and are
+   * available as globals by the time window 'load' fires.
+   * ─────────────────────────────────────────────────────────────────── */
   function triggerAutoLaunch() {
     try {
-      var autoLaunchCheck = document.querySelector('.auto-launch');
-      if (autoLaunchCheck && !autoLaunchCheck.checked) { autoLaunchCheck.click(); }
-      var finaleCheck = document.querySelector('.finale-mode');
-      if (finaleCheck && !finaleCheck.checked) { finaleCheck.click(); }
-      var pauseBtn = document.querySelector('.pause-btn');
-      if (pauseBtn) {
-        var pauseIcon = pauseBtn.querySelector('use');
-        var href = pauseIcon
-          ? (pauseIcon.getAttribute('href') || pauseIcon.getAttribute('xlink:href') || '')
-          : '';
-        if (href.indexOf('play') !== -1) { pauseBtn.click(); }
+      /* 1. Enable auto-launch and finale via the store */
+      if (typeof store !== 'undefined' && store.setState) {
+        var cfg = Object.assign({}, store.state.config, {
+          autoLaunch: true,
+          finale: true
+        });
+        store.setState({ config: cfg });
+        /* Sync config side-effects */
+        if (typeof configDidUpdate === 'function') { configDidUpdate(); }
+        /* Also sync UI checkboxes so they reflect reality */
+        if (typeof updateConfig === 'function') { updateConfig(cfg); }
       }
-    } catch (e) { /* no-op */ }
+
+      /* 2. Unpause if paused */
+      if (typeof togglePause === 'function') {
+        togglePause(false);   /* false = un-pause / resume */
+      } else if (typeof store !== 'undefined') {
+        store.setState({ paused: false });
+      }
+
+      /* 3. Close the settings menu if open */
+      if (typeof toggleMenu === 'function') {
+        toggleMenu(false);
+      } else if (typeof store !== 'undefined') {
+        store.setState({ menuOpen: false });
+      }
+
+    } catch (e) {
+      /* Fallback: try clicking DOM elements */
+      try {
+        var autoCheck  = document.querySelector('.auto-launch');
+        var finaleCheck = document.querySelector('.finale-mode');
+        if (autoCheck  && !autoCheck.checked)  { autoCheck.click(); }
+        if (finaleCheck && !finaleCheck.checked) { finaleCheck.click(); }
+        var pauseBtn = document.querySelector('.pause-btn');
+        if (pauseBtn) { pauseBtn.click(); }
+      } catch(e2) {}
+    }
   }
 
-  /* ── Drift-corrected tick ──────────────────────────────────────────
-   * setInterval is throttled / frozen on mobile (background tabs,
-   * screen lock, CPU throttling). We store the absolute endTime and
-   * compute remaining from Date.now() on every tick instead of
-   * decrementing a counter, so the display is always accurate when
-   * the phone wakes up.
-   * ────────────────────────────────────────────────────────────────── */
+  /* ── Drift-corrected tick ── */
   function tick() {
     var remaining = Math.round((endTime - Date.now()) / 1000);
 
@@ -192,15 +197,12 @@ function cdInit() {
     triggerAutoLaunch();
 
     startBtn.textContent = 'Start Countdown';
-    startBtn.className   = startBtn.className.replace(/\bactive\b/g, '').trim();
+    removeClass(startBtn, 'active');
   }
 
   function startCountdown() {
     var secs = parseInt(durationInput.value, 10);
-    if (!secs || secs < 1) {
-      durationInput.focus();
-      return;
-    }
+    if (!secs || secs < 1) { durationInput.focus(); return; }
 
     endTime   = Date.now() + secs * 1000;
     isRunning = true;
@@ -210,9 +212,7 @@ function cdInit() {
     setUrgent(false);
 
     startBtn.textContent = 'Cancel';
-    if (startBtn.className.indexOf('active') === -1) {
-      startBtn.className += ' active';
-    }
+    addClass(startBtn, 'active');
 
     timer = setInterval(tick, 1000);
   }
@@ -225,19 +225,16 @@ function cdInit() {
 
     hideOverlay();
     setUrgent(false);
-    zeroMsg.className = zeroMsg.className.replace(/\bvisible\b/g, '').trim();
+    removeClass(zeroMsg, 'visible');
 
     startBtn.textContent = 'Start Countdown';
-    startBtn.className   = startBtn.className.replace(/\bactive\b/g, '').trim();
+    removeClass(startBtn, 'active');
 
     var v = parseInt(durationInput.value, 10);
     display.textContent = formatTime(isNaN(v) ? 0 : v);
   }
 
-  /* ── Button: touchend + click for max compatibility ────────────────
-   * touchend fires before click and skips the 300 ms delay on old iOS.
-   * We flag it so the fallback click handler doesn't double-fire.
-   * ────────────────────────────────────────────────────────────────── */
+  /* ── Button: touchend + click dual handler ── */
   var touchFired = false;
 
   function handleActivation(e) {
@@ -246,54 +243,46 @@ function cdInit() {
     if (isRunning) { cancelCountdown(); } else { startCountdown(); }
   }
 
-  startBtn.addEventListener('touchend', function (e) {
+  startBtn.addEventListener('touchend', function(e) {
     touchFired = true;
     handleActivation(e);
-    setTimeout(function () { touchFired = false; }, 600);
+    setTimeout(function() { touchFired = false; }, 600);
   }, { passive: false });
 
-  startBtn.addEventListener('click', function (e) {
+  startBtn.addEventListener('click', function(e) {
     if (touchFired) { return; }
     handleActivation(e);
   });
 
-  /* Live-preview while editing duration (idle only) */
-  durationInput.addEventListener('input', function () {
+  /* Live preview while editing duration */
+  durationInput.addEventListener('input', function() {
     if (!isRunning) {
       var v = parseInt(this.value, 10);
       display.textContent = formatTime(isNaN(v) ? 0 : v);
     }
   });
 
-  /* ── Page Visibility API: re-sync on return from background ────────
-   * The browser may freeze JS while the app is backgrounded on mobile.
-   * When the user returns, immediately recalculate from the wall clock.
-   * ────────────────────────────────────────────────────────────────── */
-  var visibilityChange =
-    (typeof document.hidden !== 'undefined')           ? 'visibilitychange'
-    : (typeof document.msHidden !== 'undefined')       ? 'msvisibilitychange'
-    : (typeof document.webkitHidden !== 'undefined')   ? 'webkitvisibilitychange'
-    : null;
+  /* ── Page Visibility: re-sync on wake ── */
+  var visChange =
+    typeof document.hidden           !== 'undefined' ? 'visibilitychange' :
+    typeof document.msHidden         !== 'undefined' ? 'msvisibilitychange' :
+    typeof document.webkitHidden     !== 'undefined' ? 'webkitvisibilitychange' : null;
 
-  if (visibilityChange) {
-    document.addEventListener(visibilityChange, function () {
+  if (visChange) {
+    document.addEventListener(visChange, function() {
       if (!isRunning) { return; }
-      var isHidden = document.hidden || document.msHidden || document.webkitHidden;
-      if (!isHidden) {
-        tick(); /* immediate re-sync */
-        if (Date.now() >= endTime) {
-          clearInterval(timer);
-          finish();
-        }
+      var hidden = document.hidden || document.msHidden || document.webkitHidden;
+      if (!hidden) {
+        tick();
+        if (Date.now() >= endTime) { clearInterval(timer); finish(); }
       }
     });
   }
+}
 
-} /* end cdInit */
-
-/* ── Boot after DOM is ready ── */
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', cdInit);
-} else {
+/* ── Boot: wait for ALL scripts to finish (window load) ── */
+if (document.readyState === 'complete') {
   cdInit();
+} else {
+  window.addEventListener('load', cdInit);
 }
