@@ -191,7 +191,7 @@ function cdInit() {
     setUrgent(false);
 
     var raw = messageInput.value || '';
-    var msg = raw.replace(/^\s+|\s+$/g, '') || '\uD83C\uDF86 Happy New Year! \uD83C\uDF86';
+    var msg = raw.replace(/^\s+|\s+$/g, '') || '🎆 Happy Birthday Ezekiel! 🎆';
     showZeroMessage(msg);
     playLaunchFanfare();
     triggerAutoLaunch();
